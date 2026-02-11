@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::time::SystemTime;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Todo {
@@ -27,8 +26,8 @@ impl Todo {
         author: Option<String>,
         issue: Option<String>,
     ) -> Self {
-        let now = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis() as u64;
         
@@ -37,7 +36,7 @@ impl Todo {
             content,
             file,
             line,
-            priority: priority.to_lowercase(),
+            priority,
             status: "open".to_string(),
             tags,
             author,
@@ -46,46 +45,4 @@ impl Todo {
             updated_at: now,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Tag {
-    pub id: Option<i64>,
-    pub name: String,
-    pub color: Option<String>,
-    pub created_at: u64,
-}
-
-impl Tag {
-    pub fn new(name: String, color: Option<String>) -> Self {
-        let now = SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
-        
-        Tag {
-            id: None,
-            name,
-            color,
-            created_at: now,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct Project {
-    pub id: Option<i64>,
-    pub path: String,
-    pub name: Option<String>,
-    pub last_scanned_at: Option<u64>,
-}
-
-#[derive(Debug)]
-pub struct ScanSession {
-    pub id: Option<i64>,
-    pub path: String,
-    pub started_at: u64,
-    pub completed_at: Option<u64>,
-    pub files_scanned: usize,
-    pub todos_found: usize,
 }
