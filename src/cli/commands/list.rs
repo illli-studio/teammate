@@ -123,13 +123,13 @@ pub fn execute(args: &ListArgs) -> Result<(), Box<dyn std::error::Error>> {
         let file_str = todo.file.as_deref().unwrap_or("-");
         
         println!("{:^5} │ {:^8} │ {:^10} │ {:^15} │ [{}:{}] {}",
-            &todo.id[..8],
+            &todo.id[..8.min(todo.id.len())],
             &todo.priority.to_uppercase(),
             &todo.status.to_uppercase(),
             tags_str,
             file_str,
             todo.line.map(|l| l.to_string()).unwrap_or_else(|| "-".to_string()),
-            &todo.content[..80]
+            &todo.content[..std::cmp::min(80, todo.content.len())]
         );
     }
     
