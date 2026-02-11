@@ -261,7 +261,7 @@ pub enum TodoStatus {
 #[derive(Debug, Parser)]
 pub struct TagArgs {
     /// TODO ID
-    pub id: String,
+    pub id: Option<String>,
 
     /// 添加标签
     #[arg(short, long)]
