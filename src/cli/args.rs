@@ -46,7 +46,8 @@ pub enum Commands {
     Add(AddArgs),
 
     /// 删除 TODO
-    #[command(alias = "rm", "del")]
+    #[command(alias = "rm")]
+    #[command(alias = "del")]
     Remove(RemoveArgs),
 
     /// 更新 TODO
@@ -118,6 +119,14 @@ pub struct ScanArgs {
     /// 输出到文件
     #[arg(short, long)]
     pub output: Option<PathBuf>,
+    
+    /// 不递归扫描
+    #[arg(long)]
+    pub no_recursive: bool,
+    
+    /// 仅显示统计信息
+    #[arg(long)]
+    pub stats_only: bool,
 }
 
 #[derive(Debug, Parser)]
