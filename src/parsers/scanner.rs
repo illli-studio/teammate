@@ -25,8 +25,6 @@ impl TodoScanner {
     
     pub fn scan(&self, paths: &[PathBuf]) -> ScanResult {
         let mut all_todos = Vec::new();
-        let mut files_scanned = 0;
-        let mut errors = Vec::new();
         
         // Collect all files
         let files: Vec<PathBuf> = paths.iter()
@@ -43,13 +41,14 @@ impl TodoScanner {
                 
                 if let Ok(content) = fs::read_to_string(file) {
                     let todos = self.registry.parse_file(&content, file);
-                    files_scanned += 1;
                     Some((file.clone(), todos))
                 } else {
                     Some((file.clone(), Vec::new()))
                 }
             })
             .collect();
+        
+        let files_scanned = results.len();
         
         // Collect results
         for (file, todos) in results {
@@ -58,7 +57,7 @@ impl TodoScanner {
                     file: file.to_string_lossy().to_string(),
                     line: todo.line,
                     content: todo.content,
-                    priority: todo.priority,
+                    priority: todo.priority.unwrap_or_else(|| "medium".to_string()),
                     pattern: todo.pattern,
                 });
             }

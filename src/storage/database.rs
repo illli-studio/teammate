@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Error as SqliteError};
 use serde::{Deserialize, Serialize};
 
 const DB_PATH: &str = "~/.teammate/teammate.db";
@@ -30,7 +30,8 @@ impl Storage {
         
         // Ensure directory exists
         if let Some(parent) = PathBuf::from(&db_path).parent() {
-            std::fs::create_dir_all(parent)?;
+            std::fs::create_dir_all(parent)
+                .map_err(|e| rusqlite::Error::SqliteFailure(rusqlite::ffi::Error::new(1), Some(e.to_string())))?;
         }
         
         let conn = Connection::open(&db_path)?;
@@ -138,20 +139,21 @@ impl Storage {
         
         let mut rows = stmt.query([id])?;
         if let Some(row) = rows.next()? {
-            let tags = self.get_todo_tags(id)?;
-            Ok(Some(Todo {
+            let tags = self.get_todo_tags(id).unwrap_or_default();
+            let todo = Todo {
                 id: row.get(0)?,
                 content: row.get(1)?,
                 file: row.get(2)?,
-                line: row.get(3)?.map(|l| l as usize),
+                line: row.get::<_, Option<i64>>(3)?.map(|l| l as usize),
                 priority: row.get(4)?,
                 status: row.get(5)?,
                 tags,
                 author: row.get(6)?,
                 issue: row.get(7)?,
-                created_at: row.get(8)? as u64,
-                updated_at: row.get(9)? as u64,
-            }))
+                created_at: row.get::<_, i64>(8)? as u64,
+                updated_at: row.get::<_, i64>(9)? as u64,
+            };
+            Ok(Some(todo))
         } else {
             Ok(None)
         }
@@ -165,25 +167,26 @@ impl Storage {
         
         let mut todos = Vec::new();
         let rows = stmt.query_map([], |row| {
-            let id: String = row.get(0)?;
-            let tags = self.get_todo_tags(&id)?;
             Ok(Todo {
-                id,
+                id: row.get(0)?,
                 content: row.get(1)?,
                 file: row.get(2)?,
-                line: row.get(3)?.map(|l| l as usize),
+                line: row.get::<_, Option<i64>>(3)?.map(|l| l as usize),
                 priority: row.get(4)?,
                 status: row.get(5)?,
-                tags,
+                tags: Vec::new(), // Placeholder
                 author: row.get(6)?,
                 issue: row.get(7)?,
-                created_at: row.get(8)? as u64,
-                updated_at: row.get(9)? as u64,
+                created_at: row.get::<_, i64>(8)? as u64,
+                updated_at: row.get::<_, i64>(9)? as u64,
             })
         })?;
         
         for row in rows {
-            todos.push(row?);
+            let mut todo = row?;
+            // Fetch tags separately
+            todo.tags = self.get_todo_tags(&todo.id).unwrap_or_default();
+            todos.push(todo);
         }
         
         Ok(todos)
@@ -207,14 +210,15 @@ impl Storage {
         )?;
         
         // Update tags
-        self.conn.execute("DELETE FROM todo_tags WHERE todo_id = ?1", [todo.id])?;
+        let todo_id = todo.id.clone();
+        self.conn.execute("DELETE FROM todo_tags WHERE todo_id = ?1", [&todo_id])?;
         for tag in &todo.tags {
             self.add_tag(tag)?;
             let tag_id = self.get_tag_id(tag)?;
             if let Some(tag_id) = tag_id {
                 self.conn.execute(
                     "INSERT OR IGNORE INTO todo_tags (todo_id, tag_id) VALUES (?1, ?2)",
-                    rusqlite::params![todo.id, tag_id],
+                    rusqlite::params![todo_id, tag_id],
                 )?;
             }
         }

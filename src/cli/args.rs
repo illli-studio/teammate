@@ -26,6 +26,10 @@ pub struct Args {
     #[arg(long)]
     pub no_color: bool,
 
+    /// 启用 TUI 界面
+    #[arg(long)]
+    pub tui: bool,
+
     /// 命令
     #[command(subcommand)]
     pub command: Option<Commands>,

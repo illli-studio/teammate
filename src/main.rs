@@ -3,6 +3,10 @@ use crate::cli::run;
 use clap::Parser;
 
 mod cli;
+mod storage;
+mod core;
+mod parsers;
+mod git;
 
 fn main() {
     let args = Args::parse();

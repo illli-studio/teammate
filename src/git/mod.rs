@@ -52,20 +52,14 @@ pub fn get_file_blame(file: &str, line: usize) -> Option<BlameInfo> {
     // Format: "hash author time (line) content"
     // Example: "abc1234 (John 2024-01-15 10:30:00 +0800 10) TODO: fix this"
     
-    let parts: Vec<&str> = blame_line.splitn(4).collect();
+    let parts: Vec<&str> = blame_line.splitn(4, ' ').collect();
     if parts.len() >= 4 {
         let hash = parts[0].trim();
         let author_line = parts[1].trim();
+        
+        // Find the closing parenthesis for timestamp
         let timestamp_pos = author_line.rfind(')')?;
         let author = &author_line[..timestamp_pos].trim();
-        
-        // Try to parse timestamp
-        let ts_str = &author_line[timestamp_pos..];
-        let timestamp = if ts_str.starts_with(')') {
-            // Extract timestamp if present
-            let ts_inner = &ts_str[1..].trim();
-            // Simple parsing - just use author
-        }
         
         let content = parts.get(3).map(|s| s.trim().to_string()).unwrap_or_default();
         

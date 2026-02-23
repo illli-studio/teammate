@@ -12,13 +12,11 @@ impl Parser for PythonParser {
     fn parse(&self, content: &str, path: &Path) -> Vec<ParsedTodo> {
         let mut todos = Vec::new();
         
-        let patterns = vec![
+        let patterns: Vec<(Regex, &str)> = vec![
             (Regex::new(r"(?i)#\s*TODO:?\s*(.*)").unwrap(), "#"),
             (Regex::new(r"(?i)#\s*FIXME:?\s*(.*)").unwrap(), "#"),
             (Regex::new(r"(?i)#\s*HACK:?\s*(.*)").unwrap(), "#"),
             (Regex::new(r"(?i)#\s*XXX:?\s*(.*)").unwrap(), "#"),
-            (Regex::new(r"(?i)\"\"\".*?TODO:?\s*(.*?)\s*\"\"\"").unwrap(), "\"\"\""),
-            (Regex::new(r"(?i)\'\'\'.*?TODO:?\s*(.*?)\s*\'\'\'").unwrap(), "'''"),
         ];
         
         for (line_num, line) in content.lines().enumerate() {
